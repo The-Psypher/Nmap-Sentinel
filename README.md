@@ -18,7 +18,7 @@ The result is a fully self-contained `.html` file you can open in any browser â€
 
 ---
 ---
-Access tool on: https://the-psypher.github.io/Nmap-Helios/nmap-Helios.html
+Access tool on: https://the-psypher.github.io/Nmap-Helios
 ---
 
 ## Features

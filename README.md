@@ -17,8 +17,7 @@ NMAP Helios merges the best of two tools into a single, zero-dependency HTML fil
 The result is a fully self-contained `.html` file you can open in any browser — no server, no install, no dependencies to fetch (except two CDN scripts for Chart.js and jsPDF).
 
 ---
----
-Access tool on: https://the-psypher.github.io/Nmap-Helios
+
 ---
 
 ## Features
@@ -76,7 +75,7 @@ Access tool on: https://the-psypher.github.io/Nmap-Helios
 
 ## Usage
 
-1. Open `nmap-helios.html` in any modern browser.
+1. Open http://nmaphelios.redparakeet.org/ in any modern browser.
 2. Drag and drop one or more Nmap XML files, or click **Add Scan**.
 3. Use the **Merged** tab to see all scans combined.
 4. Click ports or services in the sidebar to filter hosts.

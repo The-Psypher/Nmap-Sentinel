@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <title>NMAP SENTINEL · Multi-Scan Intelligence Platform</title>
+  <meta name="description" content="Advanced Nmap XML visualizer with multi-scan support, scan diffing, enumeration tracking, risk intelligence, and PDF reporting."/>
+  <meta name="author" content="The-Psypher & Adrilaw"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    :root{
+      --bg:#0b0d14;
+      --bg2:#0f1219;
+      --bg3:#151c28;
+      --bg4:#1a2233;
+      --border:rgba(99,179,237,0.12);
+      --border2:rgba(99,179,237,0.22);
+      --text:#e8edf8;
+      --text2:#8b9cbf;
+      --text3:#4d6080;
+      --red:#f43f5e;
+      --orange:#fb923c;
+      --yellow:#fbbf24;
+      --green:#34d399;
+      --blue:#60a5fa;
+      --cyan:#22d3ee;
+      --purple:#a78bfa;
+      --critical:#f43f5e;
+      --high:#fb923c;
+      --medium:#fbbf24;
+      --low:#34d399;
+      --done:#22d3ee;
+      --pending:#fbbf24;
+      --accent:#60a5fa;
+      --scan1:#60a5fa;
+      --scan2:#34d399;
+      --scan3:#fbbf24;
+      --scan4:#f43f5e;
+      --scan5:#a78bfa;
+    }
+    [data-theme="light"]{
+      --bg:#f0f4fb;
+      --bg2:#ffffff;
+      --bg3:#f8fafc;
+      --bg4:#e8eef8;
+      --border:rgba(59,130,246,0.15);
+      --border2:rgba(59,130,246,0.3);
+      --text:#0f1b33;
+      --text2:#3b5278;
+      --text3:#7b96bc;
+    }
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;}
+    ::-webkit-scrollbar{width:6px;height:6px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+    /* ─── LAYOUT ─── */
+    .app{display:flex;flex-direction:column;height:100vh;overflow:hidden;}
+    
+    /* ─── HEADER ─── */
+    .header{
+      display:grid;
+      grid-template-columns:auto 1fr auto;
+      align-items:center;
+      gap:1rem;
+      padding:.75rem 1.5rem;
+      background:var(--bg2);
+      border-bottom:1px solid var(--border);
+      flex-shrink:0;
+    }
+    .logo-mark{
+      display:flex;align-items:center;gap:.75rem;
+    }
+    .logo-icon{
+      width:36px;height:36px;
+      background:linear-gradient(135deg,var(--blue),var(--cyan));
+      border-radius:10px;
+      display:flex;align-items:center;justify-content:center;
+      font-family:'JetBrains Mono',monospace;
+      font-weight:700;font-size:.85rem;
+      color:#0b0d14;
+      flex-shrink:0;
+    }
+    .logo-text h1{
+      font-size:1.05rem;font-weight:800;letter-spacing:.5px;
+      background:linear-gradient(90deg,var(--blue),var(--cyan));
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+    }
+    .logo-text p{font-size:.65rem;color:var(--text3);margin-top:.1rem;letter-spacing:.3px;}
+    .header-center{display:flex;align-items:center;gap:.5rem;overflow-x:auto;}
+    .header-actions{display:flex;align-items:center;gap:.5rem;flex-shrink:0;}
+    .pulse{display:flex;align-items:center;gap:.4rem;padding:.25rem .8rem;border-radius:20px;border:1px solid var(--border);font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--text2);}
+    .pulse-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(52,211,153,.4)}50%{opacity:.5;box-shadow:0 0 0 4px rgba(52,211,153,0)}}
+
+    /* ─── SCAN TABS ─── */
+    .tabs-bar{
+      display:flex;align-items:center;
+      background:var(--bg2);
+      border-bottom:1px solid var(--border);
+      overflow-x:auto;flex-shrink:0;
+    }
+    .scan-tab{
+      display:flex;align-items:center;gap:.5rem;
+      padding:.6rem 1rem;
+      cursor:pointer;
+      white-space:nowrap;
+      border-bottom:2px solid transparent;
+      border-right:1px solid var(--border);
+      font-size:.72rem;font-weight:600;
+      transition:all 150ms;color:var(--text2);
+    }
+    .scan-tab:hover{background:var(--bg3);color:var(--text);}
+    .scan-tab.active{border-bottom-color:var(--accent);color:var(--text);background:var(--bg);}
+    .scan-tab.merged{border-bottom-color:var(--cyan);}
+    .scan-tab.merged.active{border-bottom-color:var(--cyan);}
+    .tab-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .tab-x{
+      width:16px;height:16px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-size:.7rem;opacity:.4;transition:opacity .15s;
+      margin-left:.25rem;
+    }
+    .tab-x:hover{opacity:1;background:rgba(244,63,94,.2);color:var(--red);}
+    .tab-add{
+      padding:.6rem 1rem;cursor:pointer;
+      border:none;background:transparent;
+      color:var(--text3);font-size:.72rem;font-weight:600;
+      font-family:'Syne',sans-serif;
+      display:flex;align-items:center;gap:.4rem;
+      white-space:nowrap;transition:color .15s;
+    }
+    .tab-add:hover{color:var(--text);}
+    input[type=file]{display:none;}
+
+    /* ─── MAIN BODY ─── */
+    .main{display:flex;flex:1;overflow:hidden;}
+    
+    /* ─── SIDEBAR ─── */
+    .sidebar{
+      width:220px;flex-shrink:0;
+      background:var(--bg2);
+      border-right:1px solid var(--border);
+      display:flex;flex-direction:column;
+      overflow:hidden;
+    }
+    .sb-section{padding:.75rem;border-bottom:1px solid var(--border);}
+    .sb-section h4{
+      font-size:.6rem;font-weight:700;
+      letter-spacing:1.5px;text-transform:uppercase;
+      color:var(--text3);margin-bottom:.6rem;
+    }
+    .sb-stats{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;}
+    .sb-stat{
+      background:var(--bg3);
+      border:1px solid var(--border);
+      border-radius:8px;padding:.5rem;
+    }
+    .sb-stat .lbl{font-size:.58rem;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;}
+    .sb-stat .val{font-size:1.3rem;font-weight:700;margin-top:.15rem;font-family:'JetBrains Mono',monospace;}
+    .sb-list{overflow-y:auto;}
+    .sb-item{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:.45rem .75rem;cursor:pointer;
+      font-size:.7rem;border-bottom:1px solid var(--border);
+      transition:background .1s;
+    }
+    .sb-item:hover{background:var(--bg3);}
+    .sb-item.active{background:rgba(96,165,250,.08);border-left:2px solid var(--accent);}
+    .sb-badge{
+      font-family:'JetBrains Mono',monospace;
+      font-size:.6rem;font-weight:700;
+      padding:.15rem .5rem;border-radius:4px;
+      background:rgba(96,165,250,.2);color:var(--blue);
+    }
+    .sb-badge.vuln{background:rgba(244,63,94,.2);color:var(--red);}
+
+    /* ─── CONTENT ─── */
+    .content{flex:1;overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:.9rem;}
+
+    /* ─── EMPTY STATE ─── */
+    .empty{
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      flex:1;text-align:center;padding:3rem;
+    }
+    .empty-icon{
+      width:80px;height:80px;
+      border:1px dashed var(--border2);border-radius:20px;
+      display:flex;align-items:center;justify-content:center;
+      font-size:2rem;margin-bottom:1.5rem;
+      animation:float 3s ease-in-out infinite;
+    }
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    .empty h3{font-size:1.2rem;font-weight:700;margin-bottom:.5rem;}
+    .empty p{color:var(--text2);font-size:.8rem;max-width:360px;margin-bottom:1.5rem;}
+    .drop-zone{
+      border:1px dashed var(--border2);
+      border-radius:12px;
+      padding:1.5rem 2.5rem;
+      cursor:pointer;
+      transition:all .2s;
+      font-size:.8rem;color:var(--text2);
+    }
+    .drop-zone:hover,.drop-zone.over{
+      border-color:var(--accent);
+      background:rgba(96,165,250,.05);
+      color:var(--text);
+    }
+    .drop-icon{font-size:1.5rem;margin-bottom:.5rem;}
+
+    /* ─── STATS ROW ─── */
+    .stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:.7rem;}
+    .stat-card{
+      background:var(--bg2);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:.9rem 1rem;
+      transition:border-color .2s,transform .2s;
+    }
+    .stat-card:hover{border-color:var(--border2);transform:translateY(-2px);}
+    .stat-card .s-lbl{font-size:.58rem;text-transform:uppercase;letter-spacing:1px;color:var(--text3);}
+    .stat-card .s-val{
+      font-size:1.8rem;font-weight:800;margin-top:.3rem;
+      font-family:'JetBrains Mono',monospace;
+      background:linear-gradient(135deg,var(--text),var(--blue));
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+    }
+    .stat-card.risk .s-val{background:linear-gradient(135deg,var(--orange),var(--red));-webkit-background-clip:text;background-clip:text;}
+
+    /* ─── PROGRESS ─── */
+    .progress-card{
+      background:var(--bg2);border:1px solid var(--border);
+      border-radius:12px;padding:.9rem 1.1rem;
+    }
+    .progress-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;font-size:.75rem;}
+    .progress-label{font-weight:700;letter-spacing:.3px;}
+    .progress-actions{display:flex;gap:.4rem;}
+    .prog-track{background:var(--bg);border-radius:99px;height:6px;overflow:hidden;margin-bottom:.4rem;}
+    .prog-fill{
+      height:100%;width:0%;
+      background:linear-gradient(90deg,var(--cyan),var(--blue));
+      border-radius:99px;
+      transition:width .5s cubic-bezier(.4,0,.2,1);
+    }
+    .progress-info{font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+
+    /* ─── PANELS ─── */
+    .panel{
+      background:var(--bg2);border:1px solid var(--border);
+      border-radius:12px;padding:.9rem 1rem;
+    }
+    .panel-hdr{
+      display:flex;justify-content:space-between;align-items:center;
+      margin-bottom:.8rem;
+      padding-bottom:.6rem;
+      border-bottom:1px solid var(--border);
+    }
+    .panel-hdr h3{font-size:.78rem;font-weight:700;letter-spacing:.3px;}
+    .two-col{display:grid;grid-template-columns:1fr 1.2fr;gap:.9rem;}
+    @media(max-width:900px){.two-col{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(3,1fr)}}
+
+    /* ─── RISK ITEMS ─── */
+    .risk-item{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:.7rem .5rem;border-bottom:1px solid var(--border);
+      cursor:pointer;transition:all .15s;border-radius:8px;
+    }
+    .risk-item:hover{background:var(--bg3);padding-left:.9rem;}
+    .risk-left{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+    .port-pill{
+      font-family:'JetBrains Mono',monospace;
+      font-size:.7rem;font-weight:700;
+      background:var(--bg);
+      padding:.2rem .6rem;border-radius:6px;
+      border:1px solid var(--border);
+    }
+    .risk-tag{
+      font-size:.6rem;font-weight:700;
+      padding:.15rem .55rem;border-radius:6px;
+      font-family:'JetBrains Mono',monospace;
+    }
+    .tag-CRITICAL{background:rgba(244,63,94,.2);color:var(--red);border:1px solid rgba(244,63,94,.3);}
+    .tag-HIGH{background:rgba(251,146,60,.2);color:var(--orange);border:1px solid rgba(251,146,60,.3);}
+    .tag-MEDIUM{background:rgba(251,191,36,.2);color:var(--yellow);border:1px solid rgba(251,191,36,.3);}
+    .tag-LOW{background:rgba(52,211,153,.2);color:var(--green);border:1px solid rgba(52,211,153,.3);}
+    .risk-desc{font-size:.65rem;color:var(--text2);max-width:260px;}
+    .risk-count{font-size:.6rem;color:var(--text3);font-family:'JetBrains Mono',monospace;}
+
+    /* ─── COMPARISON ─── */
+    .compare-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.7rem;}
+    .compare-card{
+      background:var(--bg3);border:1px solid var(--border);
+      border-radius:10px;padding:.8rem;
+    }
+    .compare-card .cc-name{
+      font-size:.7rem;font-weight:700;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+      margin-bottom:.6rem;
+    }
+    .compare-card .cc-stats{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;}
+    .cc-stat{font-size:.65rem;}
+    .cc-stat .cc-lbl{color:var(--text3);}
+    .cc-stat .cc-n{font-size:1.1rem;font-weight:700;font-family:'JetBrains Mono',monospace;}
+    .diff-card{grid-column:1/-1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.8rem;}
+    .diff-new{color:var(--green);font-size:.65rem;font-weight:700;}
+    .diff-gone{color:var(--red);font-size:.65rem;font-weight:700;}
+    .diff-ip{
+      font-family:'JetBrains Mono',monospace;font-size:.62rem;
+      padding:.1rem .4rem;border-radius:4px;margin:.1rem;display:inline-block;
+    }
+    .diff-ip.new{background:rgba(52,211,153,.1);}
+    .diff-ip.gone{background:rgba(244,63,94,.1);}
+
+    /* ─── SEARCH ─── */
+    .search-row{display:flex;gap:.5rem;align-items:center;}
+    .search-input{
+      flex:1;background:var(--bg);
+      border:1px solid var(--border);
+      border-radius:8px;padding:.55rem .9rem;
+      color:var(--text);font-size:.75rem;font-family:'Syne',sans-serif;
+      transition:border-color .15s;
+    }
+    .search-input:focus{outline:none;border-color:var(--accent);}
+    .search-type{
+      background:var(--bg);border:1px solid var(--border);
+      border-radius:8px;padding:.55rem .7rem;
+      color:var(--text2);font-size:.72rem;font-family:'Syne',sans-serif;
+    }
+
+    /* ─── IP ACCORDION ─── */
+    .ip-item{
+      background:var(--bg2);border:1px solid var(--border);
+      border-radius:10px;overflow:hidden;margin-bottom:.5rem;
+      transition:border-color .15s;
+    }
+    .ip-item:hover{border-color:var(--border2);}
+    .ip-hdr{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.75rem 1rem;cursor:pointer;
+      background:var(--bg3);transition:background .15s;
+    }
+    .ip-hdr:hover{background:var(--bg4);}
+    .ip-info{display:flex;align-items:center;gap:.6rem;}
+    .ip-addr{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:.85rem;}
+    .ip-host{font-size:.65rem;color:var(--text3);}
+    .ip-meta{display:flex;align-items:center;gap:.5rem;}
+    .ip-badge{
+      font-size:.62rem;padding:.2rem .55rem;border-radius:6px;
+      font-family:'JetBrains Mono',monospace;
+    }
+    .ip-body{
+      display:none;padding:.8rem;
+      background:var(--bg);
+      border-top:1px solid var(--border);
+    }
+    .ip-body.open{display:block;}
+    .ip-arrow{
+      font-size:.65rem;color:var(--text3);
+      transition:transform .2s;
+    }
+    .ip-arrow.open{transform:rotate(180deg);}
+    
+    /* ─── PORT ROWS (enum tracking) ─── */
+    .port-row{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:.65rem .9rem;margin:.35rem 0;
+      background:var(--bg2);border-radius:8px;
+      border-left:3px solid transparent;
+      transition:all .15s;
+    }
+    .port-info{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;}
+    .enum-btn{
+      font-family:'JetBrains Mono',monospace;
+      font-size:.62rem;font-weight:700;
+      padding:.35rem .9rem;border-radius:6px;
+      border:none;cursor:pointer;transition:all .15s;flex-shrink:0;
+    }
+    .enum-pending{background:rgba(251,191,36,.2);color:var(--yellow);border:1px solid rgba(251,191,36,.3);}
+    .enum-done{background:rgba(34,211,238,.2);color:var(--cyan);border:1px solid rgba(34,211,238,.3);}
+    .enum-btn:hover{filter:brightness(1.15);transform:scale(1.03);}
+
+    /* ─── DATA TABLE ─── */
+    .data-table{width:100%;border-collapse:collapse;font-size:.72rem;}
+    .data-table th{
+      padding:.55rem .75rem;
+      background:var(--bg2);color:var(--text3);
+      font-size:.6rem;text-transform:uppercase;letter-spacing:.8px;
+      text-align:left;border-bottom:1px solid var(--border);
+      position:sticky;top:0;font-weight:700;
+    }
+    .data-table td{padding:.55rem .75rem;border-bottom:1px solid var(--border);vertical-align:middle;color:var(--text2);}
+    .data-table tr:hover td{background:rgba(255,255,255,.02);}
+    .port-badge{
+      font-family:'JetBrains Mono',monospace;
+      font-size:.65rem;font-weight:700;
+      padding:.2rem .55rem;border-radius:5px;
+      background:rgba(96,165,250,.15);color:var(--blue);
+      display:inline-block;
+    }
+    .port-badge.vuln{background:rgba(244,63,94,.15);color:var(--red);}
+    .state-open{color:var(--green);font-weight:600;}
+    .state-closed{color:var(--red);}
+    .state-filtered{color:var(--yellow);}
+    .table-scroll{overflow-y:auto;max-height:52vh;}
+    .chart-wrap{position:relative;height:180px;}
+    .vuln-row{
+      background:rgba(244,63,94,.05);
+      border-left:2px solid var(--red);
+      padding:.55rem .9rem;margin-bottom:.4rem;
+      display:flex;justify-content:space-between;align-items:center;
+      font-size:.72rem;border-radius:0 6px 6px 0;
+      cursor:pointer;transition:background .15s;
+    }
+    .vuln-row:hover{background:rgba(244,63,94,.1);}
+
+    /* ─── BUTTONS ─── */
+    .btn{
+      padding:.45rem .9rem;border-radius:7px;
+      cursor:pointer;font-size:.72rem;font-weight:600;
+      border:1px solid var(--border);
+      background:transparent;color:var(--text);
+      font-family:'Syne',sans-serif;
+      display:inline-flex;align-items:center;gap:.4rem;
+      transition:all .15s;
+    }
+    .btn:hover{background:var(--bg3);border-color:var(--border2);}
+    .btn-primary{background:var(--accent);color:#0b0d14;border-color:var(--accent);}
+    .btn-primary:hover{background:#93c5fd;}
+    .btn-ghost{border-color:transparent;}
+    .btn-ghost:hover{border-color:var(--border);}
+    .btn svg{width:13px;height:13px;fill:currentColor;}
+
+    /* ─── DOCK ─── */
+    .dock{
+      position:fixed;bottom:1.2rem;left:50%;transform:translateX(-50%);
+      background:var(--bg2);
+      border:1px solid var(--border2);
+      border-radius:50px;padding:.45rem .9rem;
+      display:flex;gap:.35rem;align-items:center;
+      z-index:200;
+      backdrop-filter:blur(16px);
+      box-shadow:0 8px 32px rgba(0,0,0,.4),0 0 0 1px rgba(96,165,250,.05);
+    }
+    .dock-btn{
+      background:transparent;border:none;
+      color:var(--text2);padding:.5rem .9rem;
+      border-radius:40px;font-size:.72rem;
+      cursor:pointer;font-weight:700;
+      font-family:'Syne',sans-serif;
+      transition:all .15s;
+    }
+    .dock-btn:hover{background:var(--accent);color:#0b0d14;}
+    .dock-sep{width:1px;height:22px;background:var(--border);}
+
+    /* ─── MODAL ─── */
+    .modal{
+      display:none;position:fixed;inset:0;
+      background:rgba(0,0,0,.75);
+      align-items:center;justify-content:center;
+      z-index:1000;backdrop-filter:blur(4px);
+    }
+    .modal.open{display:flex;}
+    .modal-box{
+      background:var(--bg2);border:1px solid var(--border2);
+      border-radius:16px;width:560px;max-width:94vw;
+      max-height:88vh;display:flex;flex-direction:column;
+      box-shadow:0 24px 80px rgba(0,0,0,.6);
+    }
+    .modal-head{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:1rem 1.2rem;border-bottom:1px solid var(--border);
+    }
+    .modal-head h3{font-size:.85rem;font-weight:700;}
+    .modal-body{flex:1;overflow-y:auto;padding:1rem;}
+    .modal-body pre{
+      background:var(--bg);border:1px solid var(--border);
+      border-radius:8px;padding:.9rem;
+      font-family:'JetBrains Mono',monospace;
+      font-size:.65rem;line-height:1.7;
+      overflow-x:auto;color:var(--text);
+    }
+    .xml-tag{color:var(--blue);}
+    .xml-attr{color:var(--green);}
+    .xml-value{color:var(--orange);}
+    .xml-comment{color:var(--text3);font-style:italic;}
+    .modal-ip-list{max-height:360px;overflow-y:auto;}
+    .modal-ip-item{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:.6rem .5rem;border-bottom:1px solid var(--border);
+      font-family:'JetBrains Mono',monospace;font-size:.75rem;
+    }
+    .modal-ip-item:hover{background:var(--bg3);border-radius:6px;}
+
+    /* ─── EXPORT OPTIONS ─── */
+    .export-opts{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem;}
+    .export-btn{
+      background:var(--bg3);border:1px solid var(--border);
+      border-radius:10px;padding:.8rem 1rem;
+      font-size:.8rem;font-weight:700;cursor:pointer;
+      color:var(--text);font-family:'Syne',sans-serif;
+      display:flex;align-items:center;gap:.6rem;
+      transition:all .15s;
+    }
+    .export-btn:hover{border-color:var(--border2);background:var(--bg4);}
+    .export-btn.pdf{background:rgba(244,63,94,.1);border-color:rgba(244,63,94,.25);color:var(--red);}
+    .export-btn.pdf:hover{background:rgba(244,63,94,.2);}
+
+    /* ─── TOAST ─── */
+    #toast{
+      position:fixed;right:1.2rem;bottom:5rem;
+      background:var(--bg3);border:1px solid var(--border2);
+      border-radius:8px;padding:.55rem 1rem;
+      font-size:.72rem;font-family:'JetBrains Mono',monospace;
+      z-index:9999;opacity:0;
+      transition:opacity .2s,transform .2s;
+      pointer-events:none;transform:translateY(6px);
+    }
+    #toast.show{opacity:1;transform:translateY(0);}
+
+    /* ─── SCAN INFO BADGE ─── */
+    .scan-info-row{
+      display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;
+      font-size:.65rem;color:var(--text3);font-family:'JetBrains Mono',monospace;
+    }
+    .scan-info-pill{
+      padding:.2rem .55rem;border-radius:5px;
+      background:var(--bg3);border:1px solid var(--border);
+    }
+    footer{
+      text-align:center;padding:1.2rem;margin-top:.5rem;
+      font-size:.6rem;color:var(--text3);
+      border-top:1px solid var(--border);
+    }
+    footer a{color:var(--accent);text-decoration:none;}
+    footer a:hover{text-decoration:underline;}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @keyframes slideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    .animate-in{animation:slideIn .3s ease-out forwards;}
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-mark">
+      <div class="logo-icon">NS</div>
+      <div class="logo-text">
+        <h1>NMAP SENTINEL</h1>
+        <p>Multi-Scan Intelligence Platform · The-Psypher &amp; Adrilaw</p>
+      </div>
+    </div>
+    <div class="header-center" id="scanTabs">
+      <button class="tab-add btn btn-ghost" id="tabAddBtn" style="font-size:.72rem;">
+        <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 2l5 5h-3v5H6V7H3l5-5zm-6 9v4h12v-4h1v5H1v-5h1z"/></svg>
+        Add Scan
+      </button>
+      <input type="file" id="fileInput" accept=".xml" multiple/>
+    </div>
+    <div class="header-actions">
+      <div class="pulse" id="statusPulse" style="display:none;">
+        <span class="pulse-dot"></span><span>LIVE</span>
+      </div>
+      <button class="btn btn-ghost" id="btnTheme" title="Toggle theme">
+        <svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm6.219 1.781a1 1 0 011.414 0l.707.707a1 1 0 11-1.414 1.414l-.707-.707a1 1 0 010-1.414zM12 7a5 5 0 100 10 5 5 0 000-10zm-7 4a1 1 0 100 2H3a1 1 0 100-2h2zm13 0a1 1 0 110 2h-2a1 1 0 110-2h2z"/></svg>
+        Theme
+      </button>
+    </div>
+  </div>
+
+  <!-- MAIN BODY -->
+  <div class="main">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sb-section">
+        <h4>Overview</h4>
+        <div class="sb-stats">
+          <div class="sb-stat"><div class="lbl">Hosts</div><div class="val" id="sbHosts">—</div></div>
+          <div class="sb-stat"><div class="lbl">Open</div><div class="val" id="sbOpen">—</div></div>
+          <div class="sb-stat"><div class="lbl">Uniq</div><div class="val" id="sbUniq">—</div></div>
+          <div class="sb-stat"><div class="lbl">Svcs</div><div class="val" id="sbSvcs">—</div></div>
+        </div>
+      </div>
+      <div class="sb-section" style="flex-shrink:0;padding-bottom:.4rem;">
+        <h4>Open Ports</h4>
+      </div>
+      <div class="sb-list" style="max-height:200px;overflow-y:auto;flex-shrink:0;" id="sbPorts"></div>
+      <div class="sb-section" style="flex-shrink:0;padding-bottom:.4rem;">
+        <h4>Services</h4>
+      </div>
+      <div class="sb-list" style="flex:1;overflow-y:auto;" id="sbServices"></div>
+    </div>
+
+    <!-- CONTENT AREA -->
+    <div class="content" id="contentArea">
+
+      <!-- EMPTY STATE -->
+      <div class="empty" id="emptyState">
+        <div class="empty-icon">📡</div>
+        <h3>NMAP SENTINEL</h3>
+        <p>Drop one or more Nmap XML files to begin multi-scan analysis with risk intelligence and enumeration tracking.</p>
+        <label class="drop-zone" for="fileInput" id="dropZone">
+          <div class="drop-icon">📂</div>
+          <div style="font-weight:700;margin-bottom:.3rem;">Drag &amp; drop .xml files here</div>
+          <div style="font-size:.7rem;">or click to browse · supports multiple files</div>
+        </label>
+        <div style="margin-top:1rem;display:flex;gap:.6rem;justify-content:center;">
+          <button class="btn btn-primary" id="exampleBtn">📋 Load Example</button>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div id="dashboard" style="display:none;">
+        <!-- Comparison -->
+        <div id="compSection"></div>
+
+        <!-- Stats -->
+        <div class="stats-row" id="statsRow">
+          <div class="stat-card"><div class="s-lbl">Total Hosts</div><div class="s-val" id="stHosts">0</div></div>
+          <div class="stat-card"><div class="s-lbl">Open Ports</div><div class="s-val" id="stOpen">0</div></div>
+          <div class="stat-card"><div class="s-lbl">Unique Ports</div><div class="s-val" id="stUniq">0</div></div>
+          <div class="stat-card"><div class="s-lbl">Services</div><div class="s-val" id="stSvcs">0</div></div>
+          <div class="stat-card risk"><div class="s-lbl">Risk Score</div><div class="s-val" id="stRisk">0</div></div>
+        </div>
+
+        <!-- Enum Progress (shown per single scan) -->
+        <div class="progress-card" id="progressCard" style="display:none;">
+          <div class="progress-header">
+            <span class="progress-label">⚡ ENUMERATION PROGRESS</span>
+            <div class="progress-actions">
+              <button class="btn btn-ghost" id="bulkPending" style="font-size:.65rem;">ALL PENDING</button>
+              <button class="btn btn-ghost" id="bulkDone" style="font-size:.65rem;">ALL DONE</button>
+            </div>
+          </div>
+          <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+          <div class="progress-info" id="progText">0 / 0 ports enumerated</div>
+        </div>
+
+        <!-- Vulns -->
+        <div id="vulnCard" style="display:none;" class="panel">
+          <div class="panel-hdr">
+            <h3>⚠ VULNERABLE PORTS</h3>
+            <span id="vulnCount" style="font-size:.65rem;color:var(--red);font-family:'JetBrains Mono',monospace;"></span>
+          </div>
+          <div id="vulnList"></div>
+        </div>
+
+        <!-- Two col: Risk / Chart -->
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-hdr"><h3>🎯 RISK INTELLIGENCE</h3></div>
+            <div id="riskList" style="max-height:380px;overflow-y:auto;"></div>
+          </div>
+          <div class="panel">
+            <div class="panel-hdr"><h3>📊 SERVICE DISTRIBUTION</h3></div>
+            <div class="chart-wrap"><canvas id="svcChart"></canvas></div>
+            <div style="margin-top:.6rem;" class="chart-wrap"><canvas id="portChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Ports Table -->
+        <div class="panel">
+          <div class="panel-hdr">
+            <h3>🔌 OPEN PORTS TABLE</h3>
+            <div style="display:flex;gap:.4rem;align-items:center;">
+              <button class="btn btn-ghost" id="btnToggleClosed" style="font-size:.65rem;">Show Closed</button>
+              <button class="btn btn-ghost" id="btnCopyAllIPs" style="font-size:.65rem;">📋 Copy All IPs</button>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table class="data-table">
+              <thead><tr><th>Port</th><th>Proto</th><th>Service</th><th>Status</th><th>Hosts</th></tr></thead>
+              <tbody id="portsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- IP Inventory -->
+        <div class="panel">
+          <div class="panel-hdr">
+            <h3>🖥 HOST INVENTORY <span id="ipCount" style="color:var(--text3);font-weight:400;font-size:.68rem;"></span></h3>
+          </div>
+          <div class="search-row" style="margin-bottom:.8rem;">
+            <select class="search-type" id="searchType">
+              <option value="all">All</option>
+              <option value="ip">IP</option>
+              <option value="port">Port</option>
+              <option value="service">Service</option>
+            </select>
+            <input type="text" class="search-input" id="searchInput" placeholder="Search IP, port, service... (press /)"/>
+            <button class="btn btn-ghost" id="btnClearSearch" style="font-size:.65rem;">Clear</button>
+          </div>
+          <div id="searchResults" style="display:none;font-size:.65rem;color:var(--text3);margin-bottom:.5rem;font-family:'JetBrains Mono',monospace;"></div>
+          <div id="ipAccordion"></div>
+        </div>
+
+        <footer>
+          Inspired by <a href="https://sumanrox.github.io/" target="_blank">sumanrox.github.io</a> ·
+          Built by
+          <a href="https://github.com/The-Psypher" target="_blank">The-Psypher</a>
+          (<a href="https://www.linkedin.com/in/prajesh-rajcoomar-140a693b5" target="_blank">LinkedIn</a>) &amp;
+          <a href="https://github.com/Adrilaw" target="_blank">Adrilaw/KidPentester</a>
+          (<a href="https://www.linkedin.com/in/dodin-mel-adrien-lawrence-enzo-5568b91b5/" target="_blank">LinkedIn</a>) ·
+          NMAP SENTINEL — Authorized security use only
+        </footer>
+      </div>
+    </div>
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- FLOATING DOCK -->
+<div class="dock" id="dock">
+  <label class="dock-btn" for="fileInput">📂 ADD XML</label>
+  <span class="dock-sep"></span>
+  <button class="dock-btn" id="dockExample">📋 EXAMPLE</button>
+  <span class="dock-sep"></span>
+  <button class="dock-btn" id="dockExport">💾 EXPORT</button>
+  <button class="dock-btn" id="dockClearAll" style="display:none;">🗑 CLEAR</button>
+  <span class="dock-sep"></span>
+  <button class="dock-btn" id="dockTheme">🌓 THEME</button>
+</div>
+
+<!-- EXPORT MODAL -->
+<div class="modal" id="exportModal">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-head">
+      <h3>📤 EXPORT DATA</h3>
+      <button class="btn btn-ghost" id="closeExport" style="font-size:.7rem;">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="export-opts">
+        <button class="export-btn" id="expJson">📋 JSON · Full scan data (all sessions)</button>
+        <button class="export-btn" id="expCsv">📊 CSV · Port status report</button>
+        <button class="export-btn" id="expIPs">📝 TXT · IP address list</button>
+        <button class="export-btn pdf" id="expPdf">📑 PDF · Professional security report</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RAW XML MODAL -->
+<div class="modal" id="rawModal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="rawTitle">Raw XML</h3>
+      <div style="display:flex;gap:.4rem;">
+        <button class="btn btn-ghost" id="btnCopyXml" style="font-size:.65rem;">Copy</button>
+        <button class="btn btn-ghost" id="btnCloseRaw" style="font-size:.65rem;">✕</button>
+      </div>
+    </div>
+    <div class="modal-body"><pre id="rawXmlPre"></pre></div>
+  </div>
+</div>
+
+<!-- IPs MODAL -->
+<div class="modal" id="ipsModal">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-head">
+      <h3 id="ipsModalTitle">Related IPs</h3>
+      <div style="display:flex;gap:.4rem;">
+        <button class="btn btn-ghost" id="btnCopyModalIPs" style="font-size:.65rem;">Copy All</button>
+        <button class="btn btn-ghost" id="btnCloseIPs" style="font-size:.65rem;">✕</button>
+      </div>
+    </div>
+    <div class="modal-body"><div id="ipsModalList" class="modal-ip-list"></div></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div class="sr-only" id="ariaLive" role="status" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+(function(){
+'use strict';
+
+// ── CONSTANTS ──
+const SCAN_COLORS=['#60a5fa','#34d399','#fbbf24','#f43f5e','#a78bfa','#22d3ee','#fb923c','#f472b6','#4ade80','#818cf8'];
+
+const RISK_DB={
+  21:{level:'CRITICAL',score:9,class:'tag-CRITICAL',desc:'FTP · Cleartext credentials, anonymous access risk'},
+  22:{level:'LOW',score:2,class:'tag-LOW',desc:'SSH · Usually safe; watch for old versions'},
+  23:{level:'CRITICAL',score:10,class:'tag-CRITICAL',desc:'Telnet · Unencrypted protocol, credentials exposed'},
+  25:{level:'HIGH',score:7,class:'tag-HIGH',desc:'SMTP · Open relay, spam or phishing gateway'},
+  53:{level:'MEDIUM',score:4,class:'tag-MEDIUM',desc:'DNS · Zone transfer, amplification DDoS risk'},
+  80:{level:'MEDIUM',score:4,class:'tag-MEDIUM',desc:'HTTP · Unencrypted web, XSS/injection surface'},
+  111:{level:'HIGH',score:7,class:'tag-HIGH',desc:'RPCBind · NFS enumeration, lateral movement'},
+  135:{level:'HIGH',score:8,class:'tag-HIGH',desc:'MS-RPC · RCE vector, Windows attack surface'},
+  139:{level:'HIGH',score:7,class:'tag-HIGH',desc:'NetBIOS · Information disclosure, session hijack'},
+  443:{level:'LOW',score:1,class:'tag-LOW',desc:'HTTPS · Encrypted; check certificate validity'},
+  445:{level:'CRITICAL',score:10,class:'tag-CRITICAL',desc:'SMB · EternalBlue, ransomware delivery vector'},
+  1433:{level:'CRITICAL',score:9,class:'tag-CRITICAL',desc:'MSSQL · Direct DB exposure, xp_cmdshell risk'},
+  3306:{level:'HIGH',score:8,class:'tag-HIGH',desc:'MySQL · Direct DB exposure, data exfiltration'},
+  3389:{level:'CRITICAL',score:9,class:'tag-CRITICAL',desc:'RDP · BlueKeep, brute force, credential theft'},
+  5432:{level:'HIGH',score:7,class:'tag-HIGH',desc:'PostgreSQL · DB exposure, privilege escalation'},
+  5900:{level:'CRITICAL',score:9,class:'tag-CRITICAL',desc:'VNC · Weak/no auth, full desktop control'},
+  6379:{level:'HIGH',score:8,class:'tag-HIGH',desc:'Redis · Unauthenticated access, RCE via config'},
+  8080:{level:'MEDIUM',score:5,class:'tag-MEDIUM',desc:'HTTP-Alt · Proxy misconfig, dev server exposure'},
+  8443:{level:'MEDIUM',score:4,class:'tag-MEDIUM',desc:'HTTPS-Alt · TLS but non-standard, often dev'},
+  27017:{level:'CRITICAL',score:9,class:'tag-CRITICAL',desc:'MongoDB · Unauthenticated, remote data access'},
+};
+function getRisk(port){
+  return RISK_DB[parseInt(port)]||{level:'INFO',score:0,class:'tag-LOW',desc:'No known critical vulnerability'};
+}
+
+// ── STATE ──
+let scans=[];
+let activeTab='merged';
+let FILTER={type:null,key:null};
+let showClosed=false;
+let enumStatus=new Map(); // key→'pending'|'done' (single-scan mode)
+let svcChart=null,portChart=null;
+let _currentModalIPs=[];
+
+// ── DOM HELPERS ──
+const $=id=>document.getElementById(id);
+const escH=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]);
+const pmr=window.matchMedia&&window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+function toast(msg,dur=2000){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),dur);}
+function announce(m){const a=$('ariaLive');a.textContent=m;setTimeout(()=>a.textContent='',2500);}
+function animNum(el,v){el.classList.add('animate-in');el.textContent=v;setTimeout(()=>el.classList.remove('animate-in'),400);}
+function enumKey(ip,port,proto){return `${ip}|${port}|${proto}`;}
+function xmlHL(xml){return xml.replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/(&lt;\/?[\w:]+)([\s>])/g,'<span class="xml-tag">$1</span>$2').replace(/([\w:]+)=/g,'<span class="xml-attr">$1</span>=').replace(/="([^"]*)"/g,'=<span class="xml-value">"$1"</span>').replace(/(&lt;!--.*?--&gt;)/g,'<span class="xml-comment">$1</span>');}
+
+// ── PARSE XML ──
+function parseXml(xmlText, filename){
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(xmlText,'application/xml');
+  if(doc.querySelector('parsererror')) throw new Error('XML parse error in '+filename);
+  const data={ips:{},ports:{},services:{},hostCount:0,scanInfo:{}};
+  const nmaprun=doc.querySelector('nmaprun');
+  if(nmaprun){
+    data.scanInfo={
+      nmapVersion:nmaprun.getAttribute('version')||'',
+      args:nmaprun.getAttribute('args')||'',
+      startTime:nmaprun.getAttribute('start')?new Date(parseInt(nmaprun.getAttribute('start'))*1000).toLocaleString():'',
+    };
+  }
+  const seen=new Set();
+  Array.from(doc.querySelectorAll('host')).forEach(h=>{
+    const addrs=Array.from(h.querySelectorAll('address'));
+    if(!addrs.length) return;
+    const v4=addrs.find(a=>a.getAttribute('addrtype')==='ipv4');
+    const ip=(v4&&v4.getAttribute('addr'))||addrs[0].getAttribute('addr');
+    if(!ip||seen.has(ip)) return; seen.add(ip);
+    data.hostCount++;
+    const hostnames=Array.from(h.querySelectorAll('hostnames > hostname')).map(n=>n.getAttribute('name')).filter(Boolean);
+    const entry={ip,hostnames,raw:h.outerHTML,ports:[]};
+    Array.from(h.querySelectorAll('port')).forEach(p=>{
+      const proto=p.getAttribute('protocol')||'tcp', port=p.getAttribute('portid');
+      const state=p.querySelector('state')?.getAttribute('state')||'unknown';
+      const svcEl=p.querySelector('service');
+      const svc=svcEl?.getAttribute('name')||'unknown', product=svcEl?.getAttribute('product')||'', version=svcEl?.getAttribute('version')||'';
+      const svcFull=[svc,product,version].filter(Boolean).join(' | ');
+      const svcKey=svcFull||svc, portKey=`${port}/${proto}`;
+      entry.ports.push({port,proto,state,svc,product,version,svcKey,portKey});
+      if(!data.ports[portKey]) data.ports[portKey]={portKey,port,proto,total:0,open:0,ips:new Set(),services:{}};
+      data.ports[portKey].total++;
+      if(state==='open') data.ports[portKey].open++;
+      data.ports[portKey].ips.add(ip);
+      if(!data.ports[portKey].services[svcKey]) data.ports[portKey].services[svcKey]={count:0,ips:new Set()};
+      data.ports[portKey].services[svcKey].count++;
+      data.ports[portKey].services[svcKey].ips.add(ip);
+      if(!data.services[svcKey]) data.services[svcKey]={name:svcKey,count:0,ports:new Set()};
+      data.services[svcKey].count++;
+      data.services[svcKey].ports.add(portKey);
+    });
+    data.ips[ip]=entry;
+  });
+  Object.values(data.ports).forEach(p=>{
+    p.ipList=Array.from(p.ips);delete p.ips;
+    Object.keys(p.services).forEach(k=>p.services[k].ips=Array.from(p.services[k].ips));
+    const entries=Object.entries(p.services);
+    if(entries.length) p.service=entries.sort((a,b)=>b[1].count-a[1].count)[0][0];
+  });
+  Object.values(data.services).forEach(s=>s.ports=Array.from(s.ports));
+  return data;
+}
+
+// ── MERGE ──
+function mergeData(scanList){
+  if(!scanList.length) return null;
+  if(scanList.length===1) return scanList[0].data;
+  const merged={ips:{},ports:{},services:{},hostCount:0};
+  scanList.forEach(sc=>{
+    const d=sc.data;
+    Object.values(d.ips).forEach(e=>{
+      if(!merged.ips[e.ip]){merged.ips[e.ip]={...e,scanIds:[sc.id]};merged.hostCount++;}
+      else{merged.ips[e.ip].scanIds.push(sc.id);e.ports.forEach(p=>{if(!merged.ips[e.ip].ports.find(ep=>ep.portKey===p.portKey&&ep.state===p.state))merged.ips[e.ip].ports.push(p);});}
+    });
+    Object.entries(d.ports).forEach(([k,p])=>{
+      if(!merged.ports[k]) merged.ports[k]={...p,ips:new Set(p.ipList),services:{...p.services}};
+      else{merged.ports[k].total+=p.total;merged.ports[k].open+=p.open;p.ipList.forEach(ip=>merged.ports[k].ips.add(ip));}
+    });
+    Object.entries(d.services).forEach(([k,s])=>{
+      if(!merged.services[k]) merged.services[k]={...s,ports:new Set(s.ports)};
+      else merged.services[k].count+=s.count;
+    });
+  });
+  Object.values(merged.ports).forEach(p=>{p.ipList=Array.from(p.ips);delete p.ips;});
+  Object.values(merged.services).forEach(s=>{s.ports=Array.from(s.ports);});
+  return merged;
+}
+
+function getActiveData(){
+  if(!scans.length) return null;
+  if(activeTab==='merged') return mergeData(scans);
+  const sc=scans.find(s=>s.id===activeTab);
+  return sc?sc.data:null;
+}
+
+function getActiveScan(){
+  if(activeTab==='merged') return null;
+  return scans.find(s=>s.id===activeTab)||null;
+}
+
+// ── ADD SCAN ──
+function addScan(xmlText,filename){
+  try{
+    const data=parseXml(xmlText,filename);
+    const id='s'+Date.now()+'_'+Math.random().toString(36).slice(2,5);
+    const color=SCAN_COLORS[scans.length%SCAN_COLORS.length];
+    scans.push({id,name:filename,color,data});
+    // Init enum for first scan
+    if(scans.length===1){
+      enumStatus.clear();
+      activeTab=id;
+      Object.values(data.ips).forEach(host=>{
+        host.ports.filter(p=>p.state==='open').forEach(p=>{
+          enumStatus.set(enumKey(host.ip,p.port,p.proto),'pending');
+        });
+      });
+    } else if(activeTab!=='merged'){
+      activeTab='merged';
+    }
+    renderTabs();
+    renderAll();
+    $('dockClearAll').style.display='flex';
+    $('statusPulse').style.display='flex';
+    announce(`Loaded ${data.hostCount} hosts from ${filename}`);
+    toast(`✓ ${filename}`);
+  }catch(e){toast('Error: '+e.message);}
+}
+
+// ── TABS ──
+function renderTabs(){
+  const bar=$('scanTabs');
+  Array.from(bar.querySelectorAll('.scan-tab')).forEach(t=>t.remove());
+  const addBtn=bar.querySelector('#tabAddBtn');
+  if(!scans.length) return;
+  if(scans.length>1){
+    const t=document.createElement('div');
+    t.className='scan-tab merged'+(activeTab==='merged'?' active':'');
+    t.innerHTML=`<span class="tab-dot" style="background:var(--cyan)"></span>All Scans (${scans.length})`;
+    t.addEventListener('click',()=>switchTab('merged'));
+    bar.insertBefore(t,addBtn);
+  }
+  scans.forEach(sc=>{
+    const t=document.createElement('div');
+    t.className='scan-tab'+(activeTab===sc.id?' active':'');
+    t.innerHTML=`<span class="tab-dot" style="background:${sc.color}"></span><span title="${escH(sc.name)}">${escH(sc.name.length>24?sc.name.slice(0,22)+'…':sc.name)}</span><span class="tab-x">✕</span>`;
+    t.querySelector('.tab-x').addEventListener('click',e=>{e.stopPropagation();removeScan(sc.id);});
+    t.addEventListener('click',()=>switchTab(sc.id));
+    bar.insertBefore(t,addBtn);
+  });
+}
+
+function switchTab(id){
+  activeTab=id;
+  FILTER={type:null,key:null};
+  if(id!=='merged'){
+    const sc=scans.find(s=>s.id===id);
+    if(sc){
+      enumStatus.clear();
+      Object.values(sc.data.ips).forEach(host=>{
+        host.ports.filter(p=>p.state==='open').forEach(p=>{
+          if(!enumStatus.has(enumKey(host.ip,p.port,p.proto)))
+            enumStatus.set(enumKey(host.ip,p.port,p.proto),'pending');
+        });
+      });
+    }
+  }
+  renderTabs();renderAll();
+}
+
+function removeScan(id){
+  scans=scans.filter(s=>s.id!==id);
+  if(activeTab===id) activeTab=scans.length>1?'merged':(scans[0]?.id||'merged');
+  renderTabs();
+  if(!scans.length){
+    $('dashboard').style.display='none';
+    $('emptyState').style.display='flex';
+    $('dockClearAll').style.display='none';
+    $('statusPulse').style.display='none';
+  } else renderAll();
+}
+
+// ── RENDER ALL ──
+function renderAll(){
+  const data=getActiveData();
+  if(!data){$('emptyState').style.display='flex';$('dashboard').style.display='none';return;}
+  $('emptyState').style.display='none';
+  $('dashboard').style.display='';
+  renderStats(data);
+  renderSidebar(data);
+  renderComparison();
+  renderProgress();
+  renderVulns(data);
+  renderRiskIntel(data);
+  renderCharts(data);
+  renderPortsTable(data);
+  renderIPs(data);
+}
+
+function calcRiskScore(data){
+  let score=0;
+  Object.values(data.ports).filter(p=>p.open>0).forEach(p=>{
+    const r=getRisk(p.port);
+    score+=r.score*p.open;
+  });
+  return Math.min(score,9999);
+}
+
+function renderStats(data){
+  const open=Object.values(data.ports).reduce((a,p)=>a+(p.open||0),0);
+  animNum($('stHosts'),data.hostCount);
+  animNum($('stOpen'),open);
+  animNum($('stUniq'),Object.keys(data.ports).length);
+  animNum($('stSvcs'),Object.keys(data.services).length);
+  animNum($('stRisk'),calcRiskScore(data));
+  animNum($('sbHosts'),data.hostCount);
+  animNum($('sbOpen'),open);
+  animNum($('sbUniq'),Object.keys(data.ports).length);
+  animNum($('sbSvcs'),Object.keys(data.services).length);
+}
+
+function renderSidebar(data){
+  const pe=$('sbPorts');pe.innerHTML='';
+  Object.values(data.ports).filter(p=>p.open>0).sort((a,b)=>b.open-a.open).slice(0,30).forEach(p=>{
+    const div=document.createElement('div');
+    div.className='sb-item'+(FILTER.type==='port'&&FILTER.key===p.portKey?' active':'');
+    const isV=RISK_DB[parseInt(p.port)]&&RISK_DB[parseInt(p.port)].score>=7;
+    div.innerHTML=`<span><span class="sb-badge${isV?' vuln':''}">${p.port}</span> <span style="color:var(--text3);font-size:.6rem">${p.proto}</span></span><span style="color:var(--text3);font-size:.65rem;font-family:'JetBrains Mono',monospace">${p.open}</span>`;
+    div.addEventListener('click',()=>toggleFilter('port',p.portKey));
+    pe.appendChild(div);
+  });
+  const se=$('sbServices');se.innerHTML='';
+  Object.values(data.services).sort((a,b)=>b.count-a.count).slice(0,20).forEach(s=>{
+    const div=document.createElement('div');
+    div.className='sb-item'+(FILTER.type==='service'&&FILTER.key===s.name?' active':'');
+    div.innerHTML=`<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px" title="${escH(s.name)}">${escH(s.name.length>22?s.name.slice(0,20)+'…':s.name)}</span><span style="color:var(--text3);font-size:.65rem;font-family:'JetBrains Mono',monospace">${s.count}</span>`;
+    div.addEventListener('click',()=>toggleFilter('service',s.name));
+    se.appendChild(div);
+  });
+}
+
+function renderComparison(){
+  const sec=$('compSection');
+  if(scans.length<2||activeTab!=='merged'){sec.innerHTML='';return;}
+  let html=`<div class="panel" style="margin-bottom:0"><div class="panel-hdr"><h3>🔬 SCAN COMPARISON</h3><span style="font-size:.65rem;color:var(--text3);">${scans.length} scans loaded</span></div><div class="compare-grid">`;
+  scans.forEach(sc=>{
+    const d=sc.data;
+    const open=Object.values(d.ports).reduce((a,p)=>a+(p.open||0),0);
+    html+=`<div class="compare-card">
+      <div class="cc-name"><span class="tab-dot" style="background:${sc.color};display:inline-block;margin-right:.4rem;"></span>${escH(sc.name)}</div>
+      <div class="cc-stats">
+        <div class="cc-stat"><div class="cc-lbl">Hosts</div><div class="cc-n">${d.hostCount}</div></div>
+        <div class="cc-stat"><div class="cc-lbl">Open</div><div class="cc-n">${open}</div></div>
+        <div class="cc-stat"><div class="cc-lbl">Ports</div><div class="cc-n">${Object.keys(d.ports).length}</div></div>
+        <div class="cc-stat"><div class="cc-lbl">Svc</div><div class="cc-n">${Object.keys(d.services).length}</div></div>
+      </div>
+      ${d.scanInfo.startTime?`<div style="font-size:.58rem;color:var(--text3);margin-top:.4rem;font-family:'JetBrains Mono',monospace;">${escH(d.scanInfo.startTime)}</div>`:''}
+    </div>`;
+  });
+  if(scans.length>=2){
+    const firstIPs=new Set(Object.keys(scans[0].data.ips));
+    const lastIPs=new Set(Object.keys(scans[scans.length-1].data.ips));
+    const newH=[...lastIPs].filter(ip=>!firstIPs.has(ip));
+    const goneH=[...firstIPs].filter(ip=>!lastIPs.has(ip));
+    if(newH.length||goneH.length){
+      html+=`<div class="diff-card">
+        <div style="font-size:.72rem;font-weight:700;margin-bottom:.5rem;">Δ Diff: "${escH(scans[0].name)}" → "${escH(scans[scans.length-1].name)}"</div>
+        ${newH.length?`<div><span class="diff-new">+${newH.length} NEW:</span> ${newH.slice(0,8).map(ip=>`<span class="diff-ip new">${escH(ip)}</span>`).join('')}${newH.length>8?`<span style="color:var(--text3);font-size:.62rem;"> +${newH.length-8} more</span>`:''}</div>`:''}
+        ${goneH.length?`<div style="margin-top:.4rem"><span class="diff-gone">-${goneH.length} GONE:</span> ${goneH.slice(0,8).map(ip=>`<span class="diff-ip gone">${escH(ip)}</span>`).join('')}${goneH.length>8?`<span style="color:var(--text3);font-size:.62rem;"> +${goneH.length-8} more</span>`:''}</div>`:''}
+      </div>`;
+    }
+  }
+  html+=`</div></div>`;
+  sec.innerHTML=html;
+}
+
+function renderProgress(){
+  const isSingle=activeTab!=='merged'&&scans.length>=1;
+  const progCard=$('progressCard');
+  if(!isSingle){progCard.style.display='none';return;}
+  const sc=scans.find(s=>s.id===activeTab);
+  if(!sc){progCard.style.display='none';return;}
+  progCard.style.display='';
+  let total=0,done=0;
+  Object.values(sc.data.ips).forEach(host=>{
+    host.ports.filter(p=>p.state==='open').forEach(p=>{
+      total++;
+      if(enumStatus.get(enumKey(host.ip,p.port,p.proto))==='done') done++;
+    });
+  });
+  const pct=total>0?Math.round((done/total)*100):0;
+  $('progFill').style.width=pct+'%';
+  $('progText').textContent=`${done} / ${total} ports enumerated (${pct}%)`;
+}
+
+function toggleEnum(ip,port,proto){
+  const k=enumKey(ip,port,proto);
+  const cur=enumStatus.get(k)||'pending';
+  enumStatus.set(k,cur==='done'?'pending':'done');
+  renderAll();
+}
+
+function renderVulns(data){
+  const vulnPorts=Object.values(data.ports).filter(p=>RISK_DB[parseInt(p.port)]&&RISK_DB[parseInt(p.port)].score>=7&&p.open>0).sort((a,b)=>getRisk(b.port).score-getRisk(a.port).score);
+  const card=$('vulnCard');
+  if(!vulnPorts.length){card.style.display='none';return;}
+  card.style.display='';
+  $('vulnCount').textContent=vulnPorts.length+' found';
+  $('vulnList').innerHTML=vulnPorts.map(p=>{
+    const r=getRisk(p.port);
+    return `<div class="vuln-row" onclick="window._tf('port','${escH(p.portKey)}')">
+      <div style="display:flex;align-items:center;gap:.6rem;">
+        <span class="port-pill">${p.port}/${p.proto}</span>
+        <span class="risk-tag ${r.class}">${r.level}</span>
+        <span style="font-size:.7rem;color:var(--text2);">${escH(r.desc)}</span>
+      </div>
+      <span style="color:var(--text3);font-size:.65rem;font-family:'JetBrains Mono',monospace;">${p.open} host${p.open>1?'s':''}</span>
+    </div>`;
+  }).join('');
+}
+
+function renderRiskIntel(data){
+  const container=$('riskList');
+  let portMap=new Map();
+  Object.values(data.ips).forEach(host=>{
+    host.ports.filter(p=>p.state==='open').forEach(p=>{
+      const key=p.portKey;
+      if(!portMap.has(key)) portMap.set(key,{port:p.port,proto:p.proto,svc:p.svc,total:0,done:0,risk:getRisk(p.port)});
+      const e=portMap.get(key);e.total++;
+      if(enumStatus.get(enumKey(host.ip,p.port,p.proto))==='done') e.done++;
+    });
+  });
+  const sorted=Array.from(portMap.values()).sort((a,b)=>b.risk.score-a.risk.score);
+  container.innerHTML='';
+  sorted.forEach(pt=>{
+    const div=document.createElement('div');div.className='risk-item';
+    div.innerHTML=`<div class="risk-left">
+      <span class="port-pill">${pt.port}/${pt.proto}</span>
+      <span class="risk-tag ${pt.risk.class}">${pt.risk.level}</span>
+      <span class="risk-desc">${escH(pt.risk.desc.length>60?pt.risk.desc.slice(0,58)+'…':pt.risk.desc)}</span>
+      <span class="risk-count">📊 ${pt.done}/${pt.total}</span>
+    </div>
+    <button class="btn btn-ghost" style="font-size:.62rem;padding:.3rem .7rem;" data-port="${escH(pt.port)}" data-proto="${escH(pt.proto)}">SHOW IPs</button>`;
+    div.querySelector('button').addEventListener('click',e=>{
+      e.stopPropagation();
+      showRelatedIPs(pt.port,pt.proto,pt.risk.level,pt.risk.desc,data);
+    });
+    container.appendChild(div);
+  });
+}
+
+function showRelatedIPs(port,proto,risk,desc,data){
+  const portKey=`${port}/${proto}`;
+  const ips=[];
+  Object.values(data.ips).forEach(host=>{
+    if(host.ports.some(p=>p.port===port&&p.proto===proto&&p.state==='open')) ips.push(host.ip);
+  });
+  _currentModalIPs=ips;
+  $('ipsModalTitle').textContent=`${portKey} · ${risk} · ${ips.length} host${ips.length!==1?'s':''}`;
+  $('ipsModalList').innerHTML=ips.map(ip=>`<div class="modal-ip-item">
+    <span>${escH(ip)}</span>
+    <button class="btn btn-ghost" style="font-size:.62rem;" onclick="navigator.clipboard.writeText('${escH(ip)}').then(()=>window._toast('Copied'))">Copy</button>
+  </div>`).join('');
+  $('ipsModal').classList.add('open');
+}
+
+function renderCharts(data){
+  const isDark=document.documentElement.getAttribute('data-theme')!=='light';
+  const tc=isDark?'#8b9cbf':'#3b5278';
+  const gc=isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)';
+  if(svcChart){svcChart.destroy();svcChart=null;}
+  if(portChart){portChart.destroy();portChart=null;}
+  const svcs=Object.values(data.services).sort((a,b)=>b.count-a.count).slice(0,10);
+  if(svcs.length){
+    const ctx=$('svcChart').getContext('2d');
+    const grads=svcs.map((_,i)=>{const g=ctx.createLinearGradient(0,0,300,0);const h=(i*36)%360;g.addColorStop(0,`hsla(${h},65%,60%,.85)`);g.addColorStop(1,`hsla(${h+30},70%,55%,.6)`);return g;});
+    svcChart=new Chart(ctx,{type:'bar',data:{labels:svcs.map(s=>s.name.length>20?s.name.slice(0,18)+'…':s.name),datasets:[{data:svcs.map(s=>s.count),backgroundColor:grads,borderWidth:0,barPercentage:.8}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,animation:{duration:pmr?0:500},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'#151c28':'#fff',titleColor:tc,bodyColor:tc,borderColor:isDark?'rgba(96,165,250,.2)':'rgba(0,0,0,.1)',borderWidth:1}},scales:{x:{beginAtZero:true,ticks:{color:tc,font:{size:10}},grid:{color:gc}},y:{ticks:{color:tc,font:{size:10}},grid:{display:false}}},onClick:(_,els)=>{if(els.length){const s=svcs[els[0].index];toggleFilter('service',s.name);}}}});
+  }
+  const ports=Object.values(data.ports).sort((a,b)=>b.open-a.open).slice(0,12);
+  if(ports.length){
+    const ctx=$('portChart').getContext('2d');
+    const colors=ports.map(p=>{const r=getRisk(p.port);return r.level==='CRITICAL'?'rgba(244,63,94,.8)':r.level==='HIGH'?'rgba(251,146,60,.8)':r.level==='MEDIUM'?'rgba(251,191,36,.8)':'rgba(96,165,250,.8)';});
+    portChart=new Chart(ctx,{type:'bar',data:{labels:ports.map(p=>p.portKey),datasets:[{data:ports.map(p=>p.open),backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:pmr?0:500},plugins:{legend:{display:false},tooltip:{backgroundColor:isDark?'#151c28':'#fff',titleColor:tc,bodyColor:tc,borderColor:isDark?'rgba(96,165,250,.2)':'rgba(0,0,0,.1)',borderWidth:1}},scales:{x:{ticks:{color:tc,font:{size:10}},grid:{display:false}},y:{beginAtZero:true,ticks:{color:tc,stepSize:1},grid:{color:gc}}}}});
+  }
+}
+
+function renderPortsTable(data){
+  const body=$('portsBody');body.innerHTML='';
+  Object.values(data.ports).filter(p=>showClosed||p.open>0).sort((a,b)=>b.open-a.open||parseInt(a.port)-parseInt(b.port)).forEach(p=>{
+    const tr=document.createElement('tr');
+    const r=RISK_DB[parseInt(p.port)];
+    const isV=r&&r.score>=7;
+    tr.innerHTML=`<td><span class="port-badge${isV?' vuln':''}">${p.port}</span></td>
+      <td style="color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:.65rem;">${p.proto}</td>
+      <td>${escH(p.service||'—')}</td>
+      <td><span style="display:inline-flex;align-items:center;gap:.35rem;font-size:.7rem;"><span style="width:6px;height:6px;border-radius:50%;background:${p.open>0?'var(--green)':'var(--red)'}"></span>${p.open>0?'Active':'Inactive'}</span></td>
+      <td style="font-weight:700;font-family:'JetBrains Mono',monospace;">${p.open}</td>`;
+    tr.style.cursor='pointer';
+    tr.addEventListener('click',()=>toggleFilter('port',p.portKey));
+    if(FILTER.type==='port'&&FILTER.key===p.portKey) tr.style.background='rgba(96,165,250,.06)';
+    body.appendChild(tr);
+  });
+}
+
+function renderIPs(data){
+  const acc=$('ipAccordion');acc.innerHTML='';
+  const q=($('searchInput').value||'').trim().toLowerCase();
+  const type=$('searchType').value;
+  let count=0;
+  const ipScanMap={};
+  if(activeTab==='merged'&&scans.length>1){
+    scans.forEach(sc=>Object.keys(sc.data.ips).forEach(ip=>{
+      if(!ipScanMap[ip]) ipScanMap[ip]=[];
+      ipScanMap[ip].push(sc);
+    }));
+  }
+  const isSingle=activeTab!=='merged';
+  Object.keys(data.ips).sort().forEach(ip=>{
+    const e=data.ips[ip];
+    if(FILTER.type==='port'&&!e.ports.some(p=>p.portKey===FILTER.key&&p.state==='open')) return;
+    if(FILTER.type==='service'&&!e.ports.some(p=>p.svcKey===FILTER.key&&p.state==='open')) return;
+    if(q){
+      let match=false;
+      if(type==='all') match=ip.includes(q)||e.hostnames.join(' ').toLowerCase().includes(q)||e.ports.some(p=>p.portKey.includes(q)||p.svcKey.toLowerCase().includes(q));
+      else if(type==='ip') match=ip.includes(q)||e.hostnames.join(' ').toLowerCase().includes(q);
+      else if(type==='port') match=e.ports.some(p=>p.portKey.includes(q)||p.port.includes(q));
+      else if(type==='service') match=e.ports.some(p=>p.svcKey.toLowerCase().includes(q)||p.svc.toLowerCase().includes(q));
+      if(!match) return;
+    }
+    count++;
+    const openPorts=e.ports.filter(p=>p.state==='open');
+    const doneCount=openPorts.filter(p=>enumStatus.get(enumKey(ip,p.port,p.proto))==='done').length;
+    let dotsHtml='';
+    if(ipScanMap[ip]) dotsHtml=ipScanMap[ip].map(sc=>`<span class="tab-dot" style="background:${sc.color}" title="${escH(sc.name)}"></span>`).join('');
+    const allDone=isSingle&&openPorts.length>0&&doneCount===openPorts.length;
+    const item=document.createElement('div');item.className='ip-item';
+    const arrowId='arrow_'+ip.replace(/\./g,'_');
+    item.innerHTML=`
+      <div class="ip-hdr" id="hdr_${ip.replace(/\./g,'_')}">
+        <div class="ip-info">
+          ${dotsHtml}
+          <span class="ip-addr">${escH(ip)}</span>
+          ${e.hostnames.length?`<span class="ip-host">— ${escH(e.hostnames.join(', '))}</span>`:''}
+        </div>
+        <div class="ip-meta">
+          ${isSingle?`<span class="ip-badge" style="background:${allDone?'rgba(34,211,238,.15)':'rgba(251,191,36,.15)'};color:${allDone?'var(--cyan)':'var(--yellow)'};">${doneCount}/${openPorts.length} done</span>`:''}
+          <span class="ip-badge" style="color:var(--text3);">${openPorts.length} open</span>
+          <span class="ip-arrow" id="${arrowId}">▼</span>
+        </div>
+      </div>
+      <div class="ip-body" id="body_${ip.replace(/\./g,'_')}">
+        <div style="display:flex;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap;">
+          <button class="btn btn-ghost" style="font-size:.62rem;" data-copy="${escH(ip)}">Copy IP</button>
+          <button class="btn btn-ghost" style="font-size:.62rem;" data-view="${escH(ip)}">Raw XML</button>
+        </div>
+        ${isSingle?renderPortRows(e,ip):renderPortTable(e)}
+      </div>`;
+    const hdr=item.querySelector(`#hdr_${ip.replace(/\./g,'_')}`);
+    const body=item.querySelector(`#body_${ip.replace(/\./g,'_')}`);
+    const arrow=item.querySelector(`#${arrowId}`);
+    hdr.addEventListener('click',ev=>{
+      if(ev.target.tagName==='BUTTON') return;
+      body.classList.toggle('open');
+      arrow.classList.toggle('open');
+    });
+    item.querySelector('[data-copy]').addEventListener('click',ev=>{ev.stopPropagation();navigator.clipboard.writeText(ip).then(()=>toast('Copied '+ip));});
+    item.querySelector('[data-view]').addEventListener('click',ev=>{ev.stopPropagation();$('rawTitle').textContent='Raw XML — '+ip;$('rawXmlPre').innerHTML=xmlHL(e.raw||'');$('rawModal').classList.add('open');});
+    if(isSingle){
+      item.querySelectorAll('.enum-btn').forEach(btn=>{
+        btn.addEventListener('click',ev=>{
+          ev.stopPropagation();
+          toggleEnum(btn.dataset.ip,btn.dataset.port,btn.dataset.proto);
+        });
+      });
+    }
+    acc.appendChild(item);
+  });
+  $('ipCount').textContent=`(${count} host${count!==1?'s':''})`;
+  const sr=$('searchResults');
+  if(q){sr.style.display='';sr.textContent=`${count} match${count!==1?'es':''} for "${q}"`;}
+  else sr.style.display='none';
+}
+
+function renderPortRows(e,ip){
+  const openPorts=e.ports.filter(p=>p.state==='open');
+  return openPorts.map(p=>{
+    const r=getRisk(p.port);
+    const isDone=(enumStatus.get(enumKey(ip,p.port,p.proto))||'pending')==='done';
+    const borderColor=r.level==='CRITICAL'?'var(--red)':r.level==='HIGH'?'var(--orange)':r.level==='MEDIUM'?'var(--yellow)':'var(--green)';
+    return `<div class="port-row" style="border-left-color:${borderColor}">
+      <div class="port-info">
+        <span class="port-pill">${p.portKey}</span>
+        <span class="risk-tag ${r.class}">${r.level}</span>
+        <span style="font-size:.72rem;">${escH(p.svc)}</span>
+        ${p.product?`<span style="font-size:.62rem;color:var(--text3);">${escH(p.product)} ${escH(p.version)}</span>`:''}
+      </div>
+      <button class="enum-btn ${isDone?'enum-done':'enum-pending'}" data-ip="${escH(ip)}" data-port="${escH(p.port)}" data-proto="${escH(p.proto)}">${isDone?'✓ DONE':'⏳ PENDING'}</button>
+    </div>`;
+  }).join('');
+}
+
+function renderPortTable(e){
+  return `<div class="table-scroll" style="max-height:280px;">
+    <table class="data-table">
+      <thead><tr><th>Port</th><th>State</th><th>Service</th><th>Product</th><th>Version</th></tr></thead>
+      <tbody>
+        ${e.ports.map(p=>`<tr><td><span class="port-badge${RISK_DB[parseInt(p.port)]&&RISK_DB[parseInt(p.port)].score>=7?' vuln':''}">${escH(p.portKey)}</span></td><td class="state-${p.state}">${escH(p.state)}</td><td>${escH(p.svc)}</td><td style="color:var(--text3)">${escH(p.product)}</td><td style="color:var(--text3)">${escH(p.version)}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function toggleFilter(type,key){
+  if(FILTER.type===type&&FILTER.key===key){FILTER={type:null,key:null};toast('Filter cleared');}
+  else{FILTER={type,key};toast(`Filter: ${type}=${key}`);}
+  const data=getActiveData();
+  if(data){renderIPs(data);renderSidebar(data);renderPortsTable(data);}
+}
+window._tf=toggleFilter;
+window._toast=toast;
+
+// ── EXPORTS ──
+function dlBlob(content,mime,filename){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=filename;a.click();}
+
+function exportJSON(){
+  const payload={generated:new Date().toISOString(),tool:'NMAP Sentinel',authors:['The-Psypher','Adrilaw'],scans:scans.map(sc=>({name:sc.name,color:sc.color,data:sc.data}))};
+  dlBlob(JSON.stringify(payload,null,2),'application/json','nmap-sentinel-export.json');
+  toast('JSON exported');
+}
+
+function exportCSV(){
+  const rows=[['scan','ip','hostname','port','proto','state','service','product','version','risk','enumStatus']];
+  scans.forEach(sc=>{
+    Object.values(sc.data.ips).forEach(host=>{
+      host.ports.forEach(p=>{
+        const r=getRisk(p.port);
+        const es=enumStatus.get(enumKey(host.ip,p.port,p.proto))||'pending';
+        rows.push([sc.name,host.ip,host.hostnames[0]||'',p.port,p.proto,p.state,p.svc,p.product,p.version,r.level,es]);
+      });
+    });
+  });
+  dlBlob(rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv','nmap-sentinel-report.csv');
+  toast('CSV exported');
+}
+
+function exportIPs(){
+  const data=getActiveData();if(!data){toast('No data');return;}
+  dlBlob(Object.keys(data.ips).sort().join('\n'),'text/plain','ips.txt');
+  toast('IPs exported');
+}
+
+async function exportPDF(){
+  const data=getActiveData();if(!data){toast('No data');return;}
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pw=doc.internal.pageSize.getWidth();
+  let y=20;
+  doc.setFillColor(11,13,20);doc.rect(0,0,pw,12,'F');
+  doc.setFillColor(96,165,250);doc.rect(0,0,pw,3,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(0,0,0);
+  y=24;doc.text('SECURITY ASSESSMENT REPORT',pw/2,y,{align:'center'});y+=8;
+  doc.setFontSize(10);doc.setTextColor(80,80,80);
+  doc.text('NMAP Sentinel · Multi-Scan Intelligence Platform',pw/2,y,{align:'center'});y+=10;
+  doc.setDrawColor(96,165,250);doc.setLineWidth(0.5);doc.line(20,y,pw-20,y);y+=7;
+  doc.setFontSize(8);doc.setTextColor(60,60,60);
+  doc.text(`Report ID: NS-${Date.now().toString().slice(-8)}`,20,y);
+  doc.text(`Generated: ${new Date().toLocaleString()}`,pw-60,y);y+=5;
+  doc.text(`Authors: The-Psypher — github.com/The-Psypher · linkedin.com/in/prajesh-rajcoomar-140a693b5`,20,y);y+=4.5;
+  doc.text(`         Adrilaw — github.com/Adrilaw · linkedin.com/in/dodin-mel-adrien-lawrence-enzo-5568b91b5`,20,y);y+=5;
+  doc.text(`Inspired by: sumanrox.github.io`,20,y);y+=12;
+  const open=Object.values(data.ports).reduce((a,p)=>a+(p.open||0),0);
+  let critical=0,high=0,medium=0,low=0;
+  Object.values(data.ports).filter(p=>p.open>0).forEach(p=>{const r=getRisk(p.port);if(r.level==='CRITICAL')critical++;else if(r.level==='HIGH')high++;else if(r.level==='MEDIUM')medium++;else low++;});
+  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(180,25,35);doc.text('EXECUTIVE SUMMARY',20,y);y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(0,0,0);
+  const summary=[
+    `Network enumeration scan covering ${data.hostCount} hosts with ${open} open ports across the target environment.`,
+    `Risk distribution: ${critical} CRITICAL, ${high} HIGH, ${medium} MEDIUM, ${low} LOW severity findings.`,
+    `Scans loaded: ${scans.length} (${scans.map(s=>s.name).join(', ')}).`,
+    `Priority recommendation: Immediate remediation of CRITICAL and HIGH severity findings is strongly advised.`
+  ];
+  summary.forEach(l=>{doc.text(l,20,y);y+=5;});y+=8;
+  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(180,25,35);doc.text('VULNERABLE PORTS & FINDINGS',20,y);y+=7;
+  doc.setFontSize(9);
+  let portMap=new Map();
+  Object.values(data.ips).forEach(host=>{
+    host.ports.filter(p=>p.state==='open').forEach(p=>{
+      const key=`${p.port}/${p.proto}`;
+      if(!portMap.has(key)) portMap.set(key,{port:p.port,proto:p.proto,service:p.svc,risk:getRisk(p.port),ips:[]});
+      portMap.get(key).ips.push(host.ip);
+    });
+  });
+  const sorted=Array.from(portMap.values()).sort((a,b)=>b.risk.score-a.risk.score);
+  for(const pt of sorted){
+    if(y>265){doc.addPage();y=20;}
+    doc.setFont('helvetica','bold');doc.setTextColor(0,0,0);
+    doc.text(`${pt.port}/${pt.proto} · ${pt.risk.level} RISK`,20,y);y+=4.5;
+    doc.setFont('helvetica','normal');doc.setTextColor(70,70,70);
+    doc.text(`Service: ${pt.service}`,25,y);y+=4;
+    doc.text(`Details: ${pt.risk.desc}`,25,y);y+=4;
+    doc.text(`Hosts (${pt.ips.length}): ${pt.ips.slice(0,5).join(', ')}${pt.ips.length>5?` +${pt.ips.length-5} more`:''}`,25,y);y+=5.5;
+    doc.setDrawColor(220,220,220);doc.line(20,y-2,pw-20,y-2);
+  }
+  y+=5;doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(120,120,120);
+  doc.text('This report is confidential and intended for authorized security personnel only.',pw/2,y+5,{align:'center'});
+  doc.text(`NMAP Sentinel · The-Psypher (github.com/The-Psypher) & Adrilaw (github.com/Adrilaw) · ${new Date().getFullYear()}`,pw/2,y+10,{align:'center'});
+  doc.save(`Security_Assessment_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.pdf`);
+  toast('PDF exported');
+}
+
+// ── EXAMPLE DATA ──
+const EXAMPLE1=`<?xml version="1.0"?><nmaprun version="7.94" args="nmap -sV -p- 192.168.1.0/24" start="1700000000"><host><address addr="192.168.1.1" addrtype="ipv4"/><hostnames><hostname name="router.lan"/></hostnames><ports><port protocol="tcp" portid="22"><state state="open"/><service name="ssh" product="OpenSSH" version="8.9"/></port><port protocol="tcp" portid="80"><state state="open"/><service name="http" product="nginx" version="1.24"/></port><port protocol="tcp" portid="443"><state state="open"/><service name="https" product="nginx"/></port></ports></host><host><address addr="192.168.1.10" addrtype="ipv4"/><ports><port protocol="tcp" portid="3389"><state state="open"/><service name="ms-wbt-server"/></port><port protocol="tcp" portid="445"><state state="open"/><service name="microsoft-ds"/></port><port protocol="tcp" portid="135"><state state="open"/><service name="msrpc"/></port></ports></host><host><address addr="192.168.1.20" addrtype="ipv4"/><hostnames><hostname name="db-01.lan"/></hostnames><ports><port protocol="tcp" portid="80"><state state="open"/><service name="http" product="Apache httpd" version="2.4.41"/></port><port protocol="tcp" portid="3306"><state state="open"/><service name="mysql" version="8.0"/></port><port protocol="tcp" portid="21"><state state="open"/><service name="ftp"/></port></ports></host><host><address addr="192.168.1.30" addrtype="ipv4"/><ports><port protocol="tcp" portid="22"><state state="open"/><service name="ssh"/></port><port protocol="tcp" portid="5900"><state state="open"/><service name="vnc"/></port></ports></host><runstats><finished time="1700000300"/></runstats></nmaprun>`;
+const EXAMPLE2=`<?xml version="1.0"?><nmaprun version="7.94" args="nmap -sV -p- 192.168.1.0/24" start="1700100000"><host><address addr="192.168.1.1" addrtype="ipv4"/><hostnames><hostname name="router.lan"/></hostnames><ports><port protocol="tcp" portid="22"><state state="open"/><service name="ssh" product="OpenSSH" version="9.0"/></port><port protocol="tcp" portid="80"><state state="open"/><service name="http" product="nginx"/></port></ports></host><host><address addr="192.168.1.10" addrtype="ipv4"/><ports><port protocol="tcp" portid="3389"><state state="open"/><service name="ms-wbt-server"/></port></ports></host><host><address addr="192.168.1.20" addrtype="ipv4"/><hostnames><hostname name="db-01.lan"/></hostnames><ports><port protocol="tcp" portid="80"><state state="open"/><service name="http" product="Apache httpd" version="2.4.54"/></port><port protocol="tcp" portid="3306"><state state="open"/><service name="mysql" version="8.0.32"/></port></ports></host><host><address addr="10.0.0.55" addrtype="ipv4"/><hostnames><hostname name="new-server.lan"/></hostnames><ports><port protocol="tcp" portid="22"><state state="open"/><service name="ssh"/></port><port protocol="tcp" portid="6379"><state state="open"/><service name="redis"/></port><port protocol="tcp" portid="27017"><state state="open"/><service name="mongod"/></port></ports></host><runstats><finished time="1700100400"/></runstats></nmaprun>`;
+
+function loadExample(){
+  addScan(EXAMPLE1,'scan-2024-11-14.xml');
+  setTimeout(()=>{addScan(EXAMPLE2,'scan-2024-11-15.xml');activeTab='merged';setTimeout(()=>{renderTabs();renderAll();},100);},200);
+}
+
+// ── EVENT LISTENERS ──
+$('fileInput').addEventListener('change',e=>{
+  Array.from(e.target.files).forEach(f=>{const r=new FileReader();r.onload=ev=>addScan(ev.target.result,f.name);r.readAsText(f);});
+  e.target.value='';
+});
+$('tabAddBtn').addEventListener('click',()=>$('fileInput').click());
+$('exampleBtn').addEventListener('click',loadExample);
+$('dockExample').addEventListener('click',loadExample);
+$('dockExport').addEventListener('click',()=>$('exportModal').classList.add('open'));
+$('closeExport').addEventListener('click',()=>$('exportModal').classList.remove('open'));
+$('exportModal').addEventListener('click',e=>{if(e.target===$('exportModal'))$('exportModal').classList.remove('open');});
+$('expJson').addEventListener('click',()=>{$('exportModal').classList.remove('open');exportJSON();});
+$('expCsv').addEventListener('click',()=>{$('exportModal').classList.remove('open');exportCSV();});
+$('expIPs').addEventListener('click',()=>{$('exportModal').classList.remove('open');exportIPs();});
+$('expPdf').addEventListener('click',()=>{$('exportModal').classList.remove('open');exportPDF();});
+$('dockClearAll').addEventListener('click',()=>{
+  if(!confirm('Remove all scans?')) return;
+  scans=[];activeTab='merged';FILTER={type:null,key:null};enumStatus.clear();
+  renderTabs();$('dashboard').style.display='none';$('emptyState').style.display='flex';
+  $('dockClearAll').style.display='none';$('statusPulse').style.display='none';
+  toast('All scans cleared');
+});
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')||'dark';
+  const next=cur==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',next);
+  localStorage.setItem('sentinel-theme',next);
+  const data=getActiveData();if(data)renderCharts(data);
+}
+$('btnTheme').addEventListener('click',toggleTheme);
+$('dockTheme').addEventListener('click',toggleTheme);
+$('bulkPending').addEventListener('click',()=>{
+  const sc=scans.find(s=>s.id===activeTab);
+  if(!sc) return;
+  Object.values(sc.data.ips).forEach(h=>h.ports.filter(p=>p.state==='open').forEach(p=>enumStatus.set(enumKey(h.ip,p.port,p.proto),'pending')));
+  renderAll();toast('All set to PENDING');
+});
+$('bulkDone').addEventListener('click',()=>{
+  const sc=scans.find(s=>s.id===activeTab);
+  if(!sc) return;
+  Object.values(sc.data.ips).forEach(h=>h.ports.filter(p=>p.state==='open').forEach(p=>enumStatus.set(enumKey(h.ip,p.port,p.proto),'done')));
+  renderAll();toast('All set to DONE');
+});
+$('btnToggleClosed').addEventListener('click',()=>{
+  showClosed=!showClosed;
+  $('btnToggleClosed').textContent=showClosed?'Hide Closed':'Show Closed';
+  const data=getActiveData();if(data)renderPortsTable(data);
+});
+$('btnCopyAllIPs').addEventListener('click',()=>{
+  const data=getActiveData();if(!data) return;
+  navigator.clipboard.writeText(Object.keys(data.ips).sort().join('\n')).then(()=>toast('All IPs copied'));
+});
+$('btnCopyXml').addEventListener('click',()=>navigator.clipboard.writeText($('rawXmlPre').textContent).then(()=>toast('XML copied')));
+$('btnCloseRaw').addEventListener('click',()=>$('rawModal').classList.remove('open'));
+$('rawModal').addEventListener('click',e=>{if(e.target===$('rawModal'))$('rawModal').classList.remove('open');});
+$('btnCloseIPs').addEventListener('click',()=>$('ipsModal').classList.remove('open'));
+$('ipsModal').addEventListener('click',e=>{if(e.target===$('ipsModal'))$('ipsModal').classList.remove('open');});
+$('btnCopyModalIPs').addEventListener('click',()=>{
+  navigator.clipboard.writeText(_currentModalIPs.join('\n')).then(()=>toast(`${_currentModalIPs.length} IPs copied`));
+});
+let searchTimer=null;
+$('searchInput').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{const d=getActiveData();if(d)renderIPs(d);},220);});
+$('searchType').addEventListener('change',()=>{const d=getActiveData();if(d)renderIPs(d);});
+$('btnClearSearch').addEventListener('click',()=>{$('searchInput').value='';const d=getActiveData();if(d)renderIPs(d);});
+window.addEventListener('keydown',e=>{if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();$('searchInput').focus();}});
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{
+  e.preventDefault();
+  Array.from(e.dataTransfer.files).filter(f=>f.name.endsWith('.xml')).forEach(f=>{
+    const r=new FileReader();r.onload=ev=>addScan(ev.target.result,f.name);r.readAsText(f);
+  });
+});
+
+// ── INIT ──
+const savedTheme=localStorage.getItem('sentinel-theme')||'dark';
+document.documentElement.setAttribute('data-theme',savedTheme);
+
+})();
+</script>
+</body>
+</html>

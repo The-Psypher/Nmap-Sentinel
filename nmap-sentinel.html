@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <title>NMAP SENTINEL · Multi-Scan Intelligence Platform</title>
+  <title>NMAP HELIOS · Multi-Scan Intelligence Platform</title>
   <meta name="description" content="Advanced Nmap XML visualizer with multi-scan support, scan diffing, enumeration tracking, risk intelligence, and PDF reporting."/>
   <meta name="author" content="The-Psypher & Adrilaw"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
@@ -551,7 +551,7 @@
     <div class="logo-mark">
       <div class="logo-icon">NS</div>
       <div class="logo-text">
-        <h1>NMAP SENTINEL</h1>
+        <h1>NMAP HELIOS</h1>
         <p>Multi-Scan Intelligence Platform · The-Psypher &amp; Adrilaw</p>
       </div>
     </div>
@@ -602,7 +602,7 @@
       <!-- EMPTY STATE -->
       <div class="empty" id="emptyState">
         <div class="empty-icon">📡</div>
-        <h3>NMAP SENTINEL</h3>
+        <h3>NMAP HELIOS</h3>
         <p>Drop one or more Nmap XML files to begin multi-scan analysis with risk intelligence and enumeration tracking.</p>
         <label class="drop-zone" for="fileInput" id="dropZone">
           <div class="drop-icon">📂</div>
@@ -706,7 +706,7 @@
           (<a href="https://www.linkedin.com/in/prajesh-rajcoomar-140a693b5" target="_blank">LinkedIn</a>) &amp;
           <a href="https://github.com/Adrilaw" target="_blank">Adrilaw/KidPentester</a>
           (<a href="https://www.linkedin.com/in/dodin-mel-adrien-lawrence-enzo-5568b91b5/" target="_blank">LinkedIn</a>) ·
-          NMAP SENTINEL — Authorized security use only
+          NMAP HELIOS — Authorized security use only
         </footer>
       </div>
     </div>
@@ -1342,8 +1342,8 @@ window._toast=toast;
 function dlBlob(content,mime,filename){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type:mime}));a.download=filename;a.click();}
 
 function exportJSON(){
-  const payload={generated:new Date().toISOString(),tool:'NMAP Sentinel',authors:['The-Psypher','Adrilaw'],scans:scans.map(sc=>({name:sc.name,color:sc.color,data:sc.data}))};
-  dlBlob(JSON.stringify(payload,null,2),'application/json','nmap-sentinel-export.json');
+  const payload={generated:new Date().toISOString(),tool:'NMAP Helios',authors:['The-Psypher','Adrilaw'],scans:scans.map(sc=>({name:sc.name,color:sc.color,data:sc.data}))};
+  dlBlob(JSON.stringify(payload,null,2),'application/json','nmap-helios-export.json');
   toast('JSON exported');
 }
 
@@ -1358,7 +1358,7 @@ function exportCSV(){
       });
     });
   });
-  dlBlob(rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv','nmap-sentinel-report.csv');
+  dlBlob(rows.map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n'),'text/csv','nmap-helios-report.csv');
   toast('CSV exported');
 }
 
@@ -1379,7 +1379,7 @@ async function exportPDF(){
   doc.setFont('helvetica','bold');doc.setFontSize(22);doc.setTextColor(0,0,0);
   y=24;doc.text('SECURITY ASSESSMENT REPORT',pw/2,y,{align:'center'});y+=8;
   doc.setFontSize(10);doc.setTextColor(80,80,80);
-  doc.text('NMAP Sentinel · Multi-Scan Intelligence Platform',pw/2,y,{align:'center'});y+=10;
+  doc.text('NMAP Helios · Multi-Scan Intelligence Platform',pw/2,y,{align:'center'});y+=10;
   doc.setDrawColor(96,165,250);doc.setLineWidth(0.5);doc.line(20,y,pw-20,y);y+=7;
   doc.setFontSize(8);doc.setTextColor(60,60,60);
   doc.text(`Report ID: NS-${Date.now().toString().slice(-8)}`,20,y);
@@ -1422,7 +1422,7 @@ async function exportPDF(){
   }
   y+=5;doc.setFont('helvetica','italic');doc.setFontSize(7);doc.setTextColor(120,120,120);
   doc.text('This report is confidential and intended for authorized security personnel only.',pw/2,y+5,{align:'center'});
-  doc.text(`NMAP Sentinel · The-Psypher (github.com/The-Psypher) & Adrilaw (github.com/Adrilaw) · ${new Date().getFullYear()}`,pw/2,y+10,{align:'center'});
+  doc.text(`NMAP Helios · The-Psypher (github.com/The-Psypher) & Adrilaw (github.com/Adrilaw) · ${new Date().getFullYear()}`,pw/2,y+10,{align:'center'});
   doc.save(`Security_Assessment_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.pdf`);
   toast('PDF exported');
 }
@@ -1462,7 +1462,7 @@ function toggleTheme(){
   const cur=document.documentElement.getAttribute('data-theme')||'dark';
   const next=cur==='dark'?'light':'dark';
   document.documentElement.setAttribute('data-theme',next);
-  localStorage.setItem('sentinel-theme',next);
+  localStorage.setItem('helios-theme',next);
   const data=getActiveData();if(data)renderCharts(data);
 }
 $('btnTheme').addEventListener('click',toggleTheme);
@@ -1510,7 +1510,7 @@ document.addEventListener('drop',e=>{
 });
 
 // ── INIT ──
-const savedTheme=localStorage.getItem('sentinel-theme')||'dark';
+const savedTheme=localStorage.getItem('helios-theme')||'dark';
 document.documentElement.setAttribute('data-theme',savedTheme);
 
 })();

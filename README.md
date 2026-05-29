@@ -1,4 +1,4 @@
-# 🛡️ NMAP SENTINEL
+# 🛡️ NMAP HELIOS
 
 **Multi-Scan Intelligence Platform** — A professional Nmap XML visualizer built for red teamers and pentesters.
 
@@ -9,7 +9,7 @@
 
 ## What Is It?
 
-NMAP Sentinel merges the best of two tools into a single, zero-dependency HTML file:
+NMAP Helios merges the best of two tools into a single, zero-dependency HTML file:
 
 - **FastMap** — single-scan visualizer with per-port enumeration tracking and PDF reporting
 - **Nmap Multi-Scan Visualizer** — multi-file comparison, scan diffing, and service analysis
@@ -18,7 +18,7 @@ The result is a fully self-contained `.html` file you can open in any browser �
 
 ---
 ---
-Access tool on: https://the-psypher.github.io/Nmap-Sentinel/nmap-sentinel.html
+Access tool on: https://the-psypher.github.io/Nmap-Helios/nmap-Helios.html
 ---
 
 ## Features
@@ -76,7 +76,7 @@ Access tool on: https://the-psypher.github.io/Nmap-Sentinel/nmap-sentinel.html
 
 ## Usage
 
-1. Open `nmap-sentinel.html` in any modern browser.
+1. Open `nmap-helios.html` in any modern browser.
 2. Drag and drop one or more Nmap XML files, or click **Add Scan**.
 3. Use the **Merged** tab to see all scans combined.
 4. Click ports or services in the sidebar to filter hosts.
@@ -100,7 +100,7 @@ nmap -A -oX output.xml 192.168.1.0/24
 nmap -sV -p- -oX output.xml 192.168.1.0/24
 ```
 
-Load the resulting `.xml` file directly into Sentinel.
+Load the resulting `.xml` file directly into Helios.
 
 ---
 
@@ -124,7 +124,7 @@ Inspired by the security tooling work of **[sumanrox](https://sumanrox.github.io
 ---
 
 # 📝 License
-Nmap-Sentinel is licensed under the [GNU General Public License](LICENSE) and the [Nmap-Sentinel Commercial License](C-LICENSE)- see the LICENSE file for details
+Nmap-Helios is licensed under the [GNU General Public License](LICENSE) and the [Nmap-Helios Commercial License](C-LICENSE)- see the LICENSE file for details
 
 ---
 

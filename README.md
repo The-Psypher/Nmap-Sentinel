@@ -17,6 +17,9 @@ NMAP Sentinel merges the best of two tools into a single, zero-dependency HTML f
 The result is a fully self-contained `.html` file you can open in any browser — no server, no install, no dependencies to fetch (except two CDN scripts for Chart.js and jsPDF).
 
 ---
+---
+Access tool on: https://the-psypher.github.io/Nmap-Sentinel/nmap-sentinel.html
+---
 
 ## Features
 

@@ -67,8 +67,6 @@ NMAP Helios merges the best of two tools into a single, zero-dependency HTML fil
 - **FastMap** — single-scan visualizer with per-port enumeration tracking and PDF reporting
 - **Nmap Multi-Scan Visualizer** — multi-file comparison, scan diffing, and service analysis
 
-The result is a fully self-contained `.html` file you can open in any browser — no server, no install, no dependencies to fetch (except two CDN scripts for Chart.js and jsPDF).
-
 ---
 
 ---
@@ -128,15 +126,19 @@ The result is a fully self-contained `.html` file you can open in any browser �
 
 ## Usage
 
-1. Open http://nmaphelios.redparakeet.org/ in any modern browser.
-2. Drag and drop one or more Nmap XML files, or click **Add Scan**.
-3. Use the **Merged** tab to see all scans combined.
+1.Open http://nmaphelios.redparakeet.org/ in any modern browser, or download the nmaphelios.html file to run it directly from your local machine.
+
+2. Drag and drop one or more Nmap XML files, or click Add Scan.
+
+3. Use the Merged tab to see all scans combined.
+
 4. Click ports or services in the sidebar to filter hosts.
-5. In single-scan mode, click **PENDING/DONE** per port to track enumeration.
-6. Click **Export** to download a PDF report or CSV.
 
-> 💡 Hit the **Load Example** button to try it instantly with two synthetic scans that include a diff.
+5. In single-scan mode, click PENDING/DONE per port to track enumeration.
 
+6. Click Export to download a PDF report or CSV.
+
+💡 Hit the Load Example button to try it instantly with two synthetic scans that include a diff.
 ---
 
 ## Generating Nmap XML

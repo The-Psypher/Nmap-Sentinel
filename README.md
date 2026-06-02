@@ -126,7 +126,7 @@ NMAP Helios merges the best of two tools into a single, zero-dependency HTML fil
 
 ## Usage
 
-1.Open http://nmaphelios.redparakeet.org/ in any modern browser, or download the nmaphelios.html file to run it directly from your local machine.
+1.Open http://nmaphelios.redparakeet.org/ in any modern browser, or download the nmap-helios.html file to run it directly from your local machine.
 
 2. Drag and drop one or more Nmap XML files, or click Add Scan.
 
@@ -138,7 +138,6 @@ NMAP Helios merges the best of two tools into a single, zero-dependency HTML fil
 
 6. Click Export to download a PDF report or CSV.
 
-💡 Hit the Load Example button to try it instantly with two synthetic scans that include a diff.
 ---
 
 ## Generating Nmap XML

@@ -1,4 +1,57 @@
 # 🛡️ NMAP HELIOS
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0d14" />
+      <stop offset="100%" stop-color="#0f1219" />
+    </linearGradient>
+
+    <filter id="helios-blue-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+    
+    <linearGradient id="cyber-sun-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" /> <stop offset="60%" stop-color="#3b82f6" /> <stop offset="100%" stop-color="#1d4ed8" /> </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="32" fill="url(#bg-grad)" />
+
+  <polygon points="256,30 460,140 460,372 256,482 52,372 52,140" 
+           fill="none" 
+           stroke="#22d3ee" 
+           stroke-width="4" 
+           stroke-opacity="0.2" />
+
+  <polygon points="256,55 432,155 432,357 256,457 80,357 80,155" 
+           fill="none" 
+           stroke="url(#cyber-sun-gradient)" 
+           stroke-width="8" 
+           stroke-dasharray="24 16" />
+
+  <g stroke="#3b82f6" stroke-width="4" opacity="0.5">
+    <line x1="256" y1="80" x2="256" y2="432" stroke-dasharray="10 10" />
+    <line x1="80" y1="256" x2="432" y2="256" stroke-dasharray="10 10" />
+    <line x1="130" y1="130" x2="382" y2="382" stroke="#22d3ee" opacity="0.25" />
+    <line x1="130" y1="382" x2="382" y2="130" stroke="#22d3ee" opacity="0.25" />
+  </g>
+
+  <circle cx="256" cy="256" r="140" fill="none" stroke="#1d4ed8" stroke-width="4" opacity="0.4" />
+  <circle cx="256" cy="256" r="100" fill="none" stroke="#22d3ee" stroke-width="6" stroke-dasharray="64 32" opacity="0.6" />
+  <circle cx="256" cy="256" r="65" fill="none" stroke="url(#cyber-sun-gradient)" stroke-width="5" opacity="0.8" />
+
+  <circle cx="256" cy="256" r="32" fill="url(#cyber-sun-gradient)" filter="url(#helios-blue-glow)" />
+
+  <circle cx="360" cy="180" r="12" fill="#22d3ee" filter="url(#helios-blue-glow)" />
+  <line x1="256" y1="256" x2="360" y2="180" stroke="#22d3ee" stroke-width="4" opacity="0.4" />
+  
+  <circle cx="170" cy="330" r="10" fill="#e8edf8" opacity="0.9" filter="url(#helios-blue-glow)" />
+  <circle cx="220" cy="130" r="7" fill="#3b82f6" opacity="0.8" />
+  <circle cx="340" cy="350" r="9" fill="#22d3ee" opacity="0.5" />
+</svg>
 
 **Multi-Scan Intelligence Platform** — A professional Nmap XML visualizer built for red teamers and pentesters.
 
